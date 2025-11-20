@@ -87,21 +87,7 @@ uint32_t can_receive_data = 0;
  * @retval  none
  * @note
  **/
-// void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan,
-//                                uint32_t RxFifo1ITs) {
-//   if (hfdcan == &hfdcan3) {
-//     if (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO1, &rx_header3,
-//                                can3_rx_data) ==
-//         HAL_OK) // 获得接收到的数据头和数据
-//     {
-//       if (rx_header3.Identifier == 0x200) { // 帧头校验
-//         // 校验通过进行具体数据处理
-//       }
-//     }
-//   }
-//   HAL_FDCAN_ActivateNotification(hfdcan, FDCAN_IT_RX_FIFO1_NEW_MESSAGE,
-//                                  0); // 再次使能FIFO0接收中断
-// }
+
 
 /**
  * @brief   向can总线发送数据，抄官方的

@@ -3,15 +3,17 @@
 
 class Pid {
 public:
-    void Init(float kp, float ki, float kd, float dt, 
-    float max_output = 15000, float min_output = -15000);
+    void Init(float kp, float ki, float kd, float dt);
     ~Pid() = default;
     void Control(float target,float current_data);
     float Result();
+    void Angle_Normalization();
+    void Derivative_Feedforward(float kff);
 private:
     float kp_;
     float ki_;
     float kd_;
+    float kff_;
     float last_error_;
     float dt_;
     float sum_error_;
@@ -19,15 +21,21 @@ private:
     float max_output_;
     float min_output_;
     float error_;
+    bool angle_flag_;
+    float feedforward_;
+    bool ff_flag_;
+    float last_target_;
 };
 
-void Pid::Init(float kp, float ki, float kd, float dt, float max_output, float min_output) {
+void Pid::Init(float kp, float ki, float kd, float dt) {
     kp_ = kp;
     ki_ = ki;
     kd_ = kd;
     dt_ = dt;
-    max_output_ = max_output;
-    min_output_ = min_output;
+    angle_flag_ = false;
+    feedforward_ = 0;
+    ff_flag_ = false;
+    last_target_ = 0;
 }
 
 float Pid::Result(){
@@ -39,6 +47,9 @@ void Pid::Control(float target, float current_data) {
     // 1. 首先计算原始误差
     error_ = target - current_data;
 
+    while (error_ > M_PI && angle_flag_)   error_ -= 2 * M_PI;
+    while (error_ < -M_PI && angle_flag_)  error_ += 2 * M_PI;
+
     // 比例项
     float p_term = kp_ * error_;
     
@@ -47,22 +58,28 @@ void Pid::Control(float target, float current_data) {
     
     // 计算未限幅的输出
     float output = p_term + i_term + kd_ * (error_ - last_error_) / dt_;
-    
-    // 输出限幅
-    if (output > max_output_) {
-        output = max_output_;
-        // 不累积积分项当输出饱和时 - 这是正确的抗饱和
-    } else if (output < min_output_) {
-        output = min_output_;
-        // 不累积积分项当输出饱和时 - 这是正确的抗饱和
-    } else {
-        // 【修复】只有输出未饱和时才累积积分
-        // 移除了 error_ <= 3000 的条件，因为误差已经归一化
-        sum_error_ += error_;
+
+    if (ff_flag_){
+
+        feedforward_ = kff_ * (target - last_target_) / dt_;
     }
     
-    result_ = output;
+    sum_error_ += error_;
+    
+    result_ = output + feedforward_;
     last_error_ = error_;
+    last_target_ = target;
+}
+
+void Pid::Angle_Normalization(){
+
+    angle_flag_ = true;
+}
+
+void Pid::Derivative_Feedforward(float kff){
+
+    ff_flag_ = true;
+    kff_ = kff;
 }
 
 #endif
